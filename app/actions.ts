@@ -18,7 +18,7 @@ export async function signUp(formData: FormData) {
   try {
     const hashedPassword = await hash(password, 10)
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
@@ -27,8 +27,11 @@ export async function signUp(formData: FormData) {
       },
     })
 
+    console.log('User created:', user)
+
     return { success: true }
   } catch (error) {
+    console.error('Error creating user:', error)
     return { error: 'An error occurred while creating your account' }
   }
 }
