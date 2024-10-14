@@ -1,4 +1,4 @@
-import NextAuth, { NextAuthOptions } from "next-auth"
+import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
@@ -6,7 +6,7 @@ import { compare, hash } from "bcryptjs"
 
 const prisma = new PrismaClient()
 
-export const authOptions: NextAuthOptions = {
+const handler = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
@@ -38,7 +38,7 @@ export const authOptions: NextAuthOptions = {
               email: credentials.email,
               password: hashedPassword,
               role: credentials.role as "STUDENT" | "TEACHER",
-              name: credentials.name, // Use the provided name instead of email
+              name: credentials.name || credentials.email.split('@')[0],
             }
           })
 
@@ -96,8 +96,6 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-}
-
-const handler = NextAuth(authOptions)
+})
 
 export { handler as GET, handler as POST }
