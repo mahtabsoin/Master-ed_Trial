@@ -7,15 +7,25 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ChevronRight, BookOpen, Users, Brain, BarChart, FileCheck, Lightbulb, GraduationCap, MessageCircle, Sun, Moon, Linkedin, Twitter, Sliders, PieChart, Edit3 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+
+type Role = 'STUDENT' | 'TEACHER'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState("teachers")
   const [darkMode, setDarkMode] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isLogin, setIsLogin] = useState(true)
-  const nameInputRef = useRef(null)
+  const [role, setRole] = useState<Role>("STUDENT")
+  const [name, setName] = useState("")
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     if (darkMode) {
@@ -35,8 +45,65 @@ export default function LandingPage() {
     setTimeout(() => nameInputRef.current?.focus(), 500)
   }
 
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    const result = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
+      action: 'login'
+    })
+
+    if (result?.error) {
+      console.error('Login error:', result.error)
+      toast.error('Login failed. Please check your credentials.')
+    } else {
+      setIsLoginOpen(false)
+      toast.success('Login successful! Redirecting to dashboard...', {
+        onClose: () => router.push('/dashboard')
+      })
+    }
+  }
+
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        name,
+        email,
+        password,
+        role,
+        action: 'signup'
+      })
+
+      if (result?.error) {
+        console.error('Signup error:', result.error)
+        toast.error(result.error || 'Sign up failed. Please try again.')
+      } else {
+        setIsLoginOpen(false)
+        toast.success('Sign up successful! Redirecting to dashboard...', {
+          onClose: () => router.push('/dashboard')
+        })
+      }
+    } catch (error) {
+      console.error('Signup error:', error)
+      toast.error('An error occurred during sign up. Please try again.')
+    }
+  }
+
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      
       <header className="bg-[#55b3f3] dark:bg-[#259ef0] text-white py-4">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center">
@@ -220,7 +287,7 @@ export default function LandingPage() {
                 <Input 
                   type="email" 
                   placeholder="Enter your email" 
-                  className="w-full rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-white text-black border-0" 
+                  className="w-full rounded-r-none focus-visible:ring-0  focus-visible:ring-offset-0 bg-white text-black border-0" 
                 />
                 <Button type="submit" className="rounded-l-none bg-white text-[#259ef0] hover:bg-gray-100">
                   Subscribe
@@ -250,26 +317,35 @@ export default function LandingPage() {
               {isLogin ? 'Enter your credentials to login' : 'Create a new account'}
             </DialogDescription>
           </DialogHeader>
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-            {!isLogin && (
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="Your name" />
-              </div>
-            )}
+          <form className="space-y-4" onSubmit={isLogin ? handleLogin : handleSignup}>
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="Your email" />
+              <Input id="email" name="email" type="email" placeholder="Your email" required />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Your password" />
+              <Input id="password" name="password" type="password" placeholder="Your password" required />
             </div>
             {!isLogin && (
-              <div>
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input id="confirm-password" type="password" placeholder="Confirm your password" />
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" name="name" type="text" placeholder="Your name" required value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Role</Label>
+                  <RadioGroup value={role} onValueChange={(value: Role) => setRole(value)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="STUDENT" id="student" />
+                      <Label htmlFor="student">Student</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="TEACHER" id="teacher" />
+                      <Label htmlFor="teacher">Teacher</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </>
             )}
             <Button type="submit" className="w-full">
               {isLogin ? 'Login' : 'Sign Up'}
@@ -281,7 +357,6 @@ export default function LandingPage() {
             </Button>
           </div>
         </DialogContent>
-      
       </Dialog>
     </div>
   )
