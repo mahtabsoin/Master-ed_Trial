@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { ReactNode } from 'react'
 
 type Role = 'STUDENT' | 'TEACHER'
 
@@ -362,7 +363,13 @@ export default function LandingPage() {
   )
 }
 
-function FeatureCard({ icon, title, description }) {
+interface FeatureCardProps {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}
+
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <Card className="border-[#85c8f6] dark:border-[#259ef0]">
       <CardContent className="flex items-start p-6">

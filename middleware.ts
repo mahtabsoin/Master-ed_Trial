@@ -10,12 +10,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Protect teacher-only routes
-  if (request.nextUrl.pathname.startsWith('/teacher') && token.role !== 'teacher') {
+  if (request.nextUrl.pathname.startsWith('/teacher') && token.role !== 'TEACHER') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   // Protect student-only routes
-  if (request.nextUrl.pathname.startsWith('/student') && token.role !== 'student') {
+  if (request.nextUrl.pathname.startsWith('/student') && token.role !== 'STUDENT') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
