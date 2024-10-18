@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options"
+import { Role } from "@prisma/client"
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -12,7 +13,7 @@ export default async function DashboardPage() {
   return (
     <div className="container mx-auto py-12">
       <h1 className="text-2xl font-bold mb-6">Welcome to Master-ed, {session.user.name}!</h1>
-      {session.user.role === 'teacher' ? (
+      {session.user.role === 'TEACHER' ? (
         <div>
           <h2 className="text-xl font-semibold mb-4">Teacher Dashboard</h2>
           <ul className="list-disc pl-5">
