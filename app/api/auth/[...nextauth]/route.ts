@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import { authOptions } from "./auth-options"
-import { Role } from "@prisma/client"
 
 const handler = NextAuth(authOptions)
 

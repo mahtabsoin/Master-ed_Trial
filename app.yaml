@@ -11,3 +11,8 @@ handlers:
     secure: always
     redirect_http_response_code: 301
     script: auto
+entrypoint: npm start
+env_variables:
+  DATABASE_URL: "postgresql://master_ed_user:Mss2912!@35.203.49.196:5432/master_ed_users?schema=public"
+  NEXTAUTH_SECRET: ${sm://nextauth-secret}
+  NEXTAUTH_URL: "https://ultimate-life-438505-t2.nn.r.appspot.com"

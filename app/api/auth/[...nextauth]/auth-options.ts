@@ -19,47 +19,60 @@ export const authOptions: NextAuthOptions = {
         name: { label: "Name", type: "text" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Missing email or password")
-        }
+        try {
+          console.log('Authorize function called with credentials:', JSON.stringify(credentials, null, 2))
 
-        if (credentials.action === "signup") {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: credentials.email }
-          })
-
-          if (existingUser) {
-            throw new Error("User already exists")
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("Missing email or password")
           }
 
-          const hashedPassword = await hash(credentials.password, 12)
-          const user = await prisma.user.create({
-            data: {
-              email: credentials.email,
-              password: hashedPassword,
-              role: credentials.role as Role,
-              name: credentials.name || credentials.email.split('@')[0],
+          if (credentials.action === "signup") {
+            // Check if user already exists
+            const existingUser = await prisma.user.findUnique({
+              where: { email: credentials.email }
+            })
+
+            if (existingUser) {
+              throw new Error("User already exists")
             }
-          })
 
-          return user
-        } else {
-          // Login
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email }
-          })
+            // Create new user
+            const hashedPassword = await hash(credentials.password, 12)
+            const newUser = await prisma.user.create({
+              data: {
+                email: credentials.email,
+                password: hashedPassword,
+                name: credentials.name || credentials.email.split('@')[0],
+                role: (credentials.role as Role) || 'Student'
+              }
+            })
 
-          if (!user) {
-            throw new Error("No user found")
+            console.log('New user created:', newUser.email)
+            return newUser
+          } else {
+            // Login process
+            const user = await prisma.user.findUnique({
+              where: { email: credentials.email }
+            })
+
+            if (!user) {
+              console.log('No user found with email:', credentials.email)
+              return null
+            }
+
+            const isPasswordValid = await compare(credentials.password, user.password)
+
+            if (!isPasswordValid) {
+              console.log('Invalid password for user:', credentials.email)
+              return null
+            }
+
+            console.log('User authenticated successfully:', user.email)
+            return user
           }
-
-          const isPasswordValid = await compare(credentials.password, user.password)
-
-          if (!isPasswordValid) {
-            throw new Error("Invalid password")
-          }
-
-          return user
+        } catch (error) {
+          console.error('Authorization error:', error)
+          return null
         }
       }
     })
@@ -71,6 +84,7 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.id = user.id;
       }
+      console.log('JWT callback, token:', JSON.stringify(token, null, 2))
       return token;
     },
     async session({ session, token }) {
@@ -79,13 +93,16 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name as string;
         session.user.id = token.id as string;
       }
+      console.log('Session callback, session:', JSON.stringify(session, null, 2))
       return session;
     }
   },
   pages: {
     signIn: '/',
+    error: '/auth/error',
   },
   session: {
     strategy: "jwt",
   },
+  debug: true, // Keep this for now to help with debugging
 }
